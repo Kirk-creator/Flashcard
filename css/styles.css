@@ -359,14 +359,25 @@ select:focus {
   gap: 0.45rem;
   position: sticky;
   top: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-solid);
+  box-shadow: 0 10px 24px rgba(26, 42, 46, 0.06);
 }
 
 .filter-title {
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.35rem;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.filter-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
   color: var(--ink-soft);
 }
 

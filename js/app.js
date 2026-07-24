@@ -170,6 +170,18 @@
     });
   }
 
+  function strengthFilterLabel(filter = cardStrengthFilter) {
+    if (filter === "weak") return "weak";
+    if (filter === "strong") return "strong";
+    if (filter === "learning") return "in between";
+    return "all";
+  }
+
+  function cardsMatchingStrength(cards, filter = cardStrengthFilter) {
+    if (filter === "all") return [...cards];
+    return cards.filter((c) => getCardStrength(c) === filter);
+  }
+
   function renderSetDetail() {
     const set = getSet(state, route.setId);
     if (!set) {
@@ -185,25 +197,41 @@
     const due = countDueCards(set);
     const orderedCards = orderedSetCards(set);
     const strengthCounts = countByStrength(set.cards);
-    const filteredCards =
-      cardStrengthFilter === "all"
-        ? orderedCards
-        : orderedCards.filter((c) => getCardStrength(c) === cardStrengthFilter);
+    const filteredCards = cardsMatchingStrength(orderedCards);
+    const filterLabel = strengthFilterLabel();
+    const studyLabel =
+      cardStrengthFilter === "all" ? "Study" : `Study ${filterLabel}`;
+    const quizLabel = cardStrengthFilter === "all" ? "Quiz" : `Quiz ${filterLabel}`;
 
     const filterOptions = [
-      { id: "all", label: "All", count: strengthCounts.all },
+      { id: "all", label: "All words", count: strengthCounts.all },
       { id: "weak", label: "Weak", count: strengthCounts.weak },
       { id: "learning", label: "In between", count: strengthCounts.learning },
       { id: "strong", label: "Strong", count: strengthCounts.strong },
     ];
+
+    const filterButtons = filterOptions
+      .map(
+        (opt) => `
+      <button
+        type="button"
+        class="filter-btn strength-${opt.id} ${cardStrengthFilter === opt.id ? "active" : ""}"
+        data-strength-filter="${opt.id}"
+        aria-pressed="${cardStrengthFilter === opt.id}"
+      >
+        <span>${opt.label}</span>
+        <span class="filter-count">${opt.count}</span>
+      </button>`
+      )
+      .join("");
 
     appEl.innerHTML = `
       <section class="hero" style="padding-bottom: 1rem;">
         <h1>${escapeHtml(set.title)}</h1>
         <p>${escapeHtml(set.description || "Manage cards, import a list, then study or take a quiz.")}</p>
         <div class="btn-row">
-          <button type="button" class="btn btn-primary" id="btn-study" ${set.cards.length ? "" : "disabled"}>Study</button>
-          <button type="button" class="btn btn-secondary" id="btn-quiz" ${set.cards.length ? "" : "disabled"}>Quiz</button>
+          <button type="button" class="btn btn-primary" id="btn-study" ${filteredCards.length ? "" : "disabled"}>${studyLabel}</button>
+          <button type="button" class="btn btn-secondary" id="btn-quiz" ${filteredCards.length ? "" : "disabled"}>${quizLabel}</button>
           <button type="button" class="btn btn-ghost" id="btn-add-card">Add card</button>
           <button type="button" class="btn btn-ghost" id="btn-import">Import</button>
           <button type="button" class="btn btn-ghost" id="btn-export">Export</button>
@@ -221,38 +249,24 @@
 
       <div class="section-head">
         <div>
-          <h2>Cards</h2>
-          <p class="muted">Prompt on the left, answer on the right.</p>
+          <h2>Word list</h2>
+          <p class="muted">Filter by strength, then study or browse the matching words.</p>
         </div>
       </div>
 
       ${
         set.cards.length
           ? `<div class="cards-layout">
-              <aside class="strength-filter" aria-label="Filter cards by strength">
-                <p class="filter-title">Filter</p>
-                ${filterOptions
-                  .map(
-                    (opt) => `
-                  <button
-                    type="button"
-                    class="filter-btn strength-${opt.id} ${cardStrengthFilter === opt.id ? "active" : ""}"
-                    data-strength-filter="${opt.id}"
-                    aria-pressed="${cardStrengthFilter === opt.id}"
-                  >
-                    <span>${opt.label}</span>
-                    <span class="filter-count">${opt.count}</span>
-                  </button>`
-                  )
-                  .join("")}
+              <aside class="strength-filter" aria-label="Filter word list by strength">
+                <p class="filter-title">Word strength</p>
+                ${filterButtons}
+                <p class="filter-hint">Showing ${filteredCards.length} of ${set.cards.length}</p>
               </aside>
               <div class="card-list">
                 ${
                   filteredCards.length
                     ? filteredCards.map((c) => cardRowHtml(c)).join("")
-                    : `<div class="panel empty">No ${
-                        cardStrengthFilter === "learning" ? "in between" : cardStrengthFilter
-                      } cards in this set.</div>`
+                    : `<div class="panel empty">No ${filterLabel} words yet. Try another filter, or study a bit so strengths can change.</div>`
                 }
               </div>
             </div>`
@@ -514,7 +528,9 @@
     if (!set || !set.cards.length) return;
 
     const forceAll = Boolean(options.forceAll);
-    const queue = shuffle(sortForReview(forceAll ? [...set.cards] : dueCards(set.cards)));
+    const strengthFilter = options.strengthFilter || cardStrengthFilter;
+    const pool = cardsMatchingStrength(forceAll ? [...set.cards] : dueCards(set.cards), strengthFilter);
+    const queue = shuffle(sortForReview(pool));
     route = { name: "study", setId };
 
     if (!queue.length) {
@@ -523,6 +539,7 @@
         setId,
         caughtUp: true,
         forceAll: false,
+        strengthFilter,
         showPromptFirst: state.settings.showPromptFirst,
         queue: [],
         index: 0,
@@ -540,6 +557,7 @@
       setId,
       caughtUp: false,
       forceAll,
+      strengthFilter,
       queue: queue.map((c) => c.id),
       index: 0,
       flipped: false,
@@ -553,9 +571,14 @@
   }
 
   function renderCaughtUp(set, kind) {
-    const when = formatNextDue(nextDueAt(set.cards));
+    const strengthFilter = session?.strengthFilter || cardStrengthFilter;
+    const filterLabel = strengthFilterLabel(strengthFilter);
+    const scoped = strengthFilter !== "all";
+    const when = formatNextDue(nextDueAt(cardsMatchingStrength(set.cards, strengthFilter)));
     const exitId = kind === "quiz" ? "btn-exit-quiz" : "btn-exit-study";
-    const againLabel = kind === "quiz" ? "Quiz all anyway" : "Study all anyway";
+    const againLabel = kind === "quiz"
+      ? scoped ? `Quiz all ${filterLabel} anyway` : "Quiz all anyway"
+      : scoped ? `Study all ${filterLabel} anyway` : "Study all anyway";
 
     setTopActions(`
       <button type="button" class="btn btn-ghost" id="${exitId}">Back to set</button>
@@ -567,7 +590,11 @@
     appEl.innerHTML = `
       <section class="hero session-summary">
         <h1>You’re caught up</h1>
-        <p>No cards are due for review right now.</p>
+        <p>${
+          scoped
+            ? `No ${filterLabel} cards are due for review right now.`
+            : "No cards are due for review right now."
+        }</p>
         <p class="muted">Next review ${when}.</p>
         <div class="btn-row">
           <button type="button" class="btn btn-primary" id="btn-force-all">${againLabel}</button>
@@ -581,9 +608,12 @@
     });
     document.getElementById("btn-force-all").addEventListener("click", () => {
       if (kind === "quiz") {
-        startQuiz(set.id, session.mode, session.showPromptFirst, { forceAll: true });
+        startQuiz(set.id, session.mode, session.showPromptFirst, {
+          forceAll: true,
+          strengthFilter,
+        });
       } else {
-        startStudy(set.id, { forceAll: true });
+        startStudy(set.id, { forceAll: true, strengthFilter });
       }
     });
   }
@@ -793,7 +823,9 @@
     if (!set || !set.cards.length) return;
 
     const forceAll = Boolean(options.forceAll);
-    const queue = shuffle(sortForReview(forceAll ? [...set.cards] : dueCards(set.cards)));
+    const strengthFilter = options.strengthFilter || cardStrengthFilter;
+    const pool = cardsMatchingStrength(forceAll ? [...set.cards] : dueCards(set.cards), strengthFilter);
+    const queue = shuffle(sortForReview(pool));
     route = { name: "quiz", setId };
 
     if (!queue.length) {
@@ -804,6 +836,7 @@
         showPromptFirst,
         caughtUp: true,
         forceAll: false,
+        strengthFilter,
         queue: [],
         index: 0,
         correct: 0,
@@ -823,6 +856,7 @@
       showPromptFirst,
       caughtUp: false,
       forceAll,
+      strengthFilter,
       queue: queue.map((c) => c.id),
       index: 0,
       correct: 0,
@@ -1025,10 +1059,14 @@
       navigate({ name: "set", setId: set.id });
     });
     document.getElementById("btn-again").addEventListener("click", () => {
+      const strengthFilter = session.strengthFilter || cardStrengthFilter;
       if (session.type === "quiz") {
-        startQuiz(set.id, session.mode, session.showPromptFirst, { forceAll: false });
+        startQuiz(set.id, session.mode, session.showPromptFirst, {
+          forceAll: false,
+          strengthFilter,
+        });
       } else {
-        startStudy(set.id, { forceAll: false });
+        startStudy(set.id, { forceAll: false, strengthFilter });
       }
     });
     document.getElementById("btn-prev-from-summary")?.addEventListener("click", () => {
