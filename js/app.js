@@ -9,7 +9,7 @@
     exportSetAsCsv,
     exportSetAsJson,
   } = RecallStorage;
-  const { applyRating, sortForReview, dueCards, nextDueAt } = RecallSpaced;
+  const { applyRating, sortForReview, dueCards, nextDueAt, getCardStrength, countByStrength } = RecallSpaced;
   const { parseImportText } = RecallImport;
   const { shuffle, buildMultipleChoice, answersMatch } = RecallQuiz;
 
@@ -21,6 +21,7 @@
   let route = { name: "home" };
   let session = null;
   let toastTimer = null;
+  let cardStrengthFilter = "all";
 
   document.getElementById("btn-home").addEventListener("click", () => navigate({ name: "home" }));
 
@@ -31,6 +32,7 @@
   function navigate(next) {
     route = next;
     session = null;
+    if (next.name !== "set") cardStrengthFilter = "all";
     render();
   }
 
@@ -154,6 +156,18 @@
     `);
 
     const due = countDueCards(set);
+    const strengthCounts = countByStrength(set.cards);
+    const filteredCards =
+      cardStrengthFilter === "all"
+        ? set.cards
+        : set.cards.filter((c) => getCardStrength(c) === cardStrengthFilter);
+
+    const filterOptions = [
+      { id: "all", label: "All", count: strengthCounts.all },
+      { id: "weak", label: "Weak", count: strengthCounts.weak },
+      { id: "learning", label: "In between", count: strengthCounts.learning },
+      { id: "strong", label: "Strong", count: strengthCounts.strong },
+    ];
 
     appEl.innerHTML = `
       <section class="hero" style="padding-bottom: 1rem;">
@@ -172,6 +186,9 @@
       <div class="stats-bar">
         <span class="chip">${set.cards.length} cards</span>
         <span class="chip due">${due} due for review</span>
+        <span class="chip strength-weak">${strengthCounts.weak} weak</span>
+        <span class="chip strength-learning">${strengthCounts.learning} in between</span>
+        <span class="chip strength-strong">${strengthCounts.strong} strong</span>
       </div>
 
       <div class="section-head">
@@ -183,7 +200,34 @@
 
       ${
         set.cards.length
-          ? `<div class="card-list">${set.cards.map((c) => cardRowHtml(c)).join("")}</div>`
+          ? `<div class="cards-layout">
+              <aside class="strength-filter" aria-label="Filter cards by strength">
+                <p class="filter-title">Filter</p>
+                ${filterOptions
+                  .map(
+                    (opt) => `
+                  <button
+                    type="button"
+                    class="filter-btn strength-${opt.id} ${cardStrengthFilter === opt.id ? "active" : ""}"
+                    data-strength-filter="${opt.id}"
+                    aria-pressed="${cardStrengthFilter === opt.id}"
+                  >
+                    <span>${opt.label}</span>
+                    <span class="filter-count">${opt.count}</span>
+                  </button>`
+                  )
+                  .join("")}
+              </aside>
+              <div class="card-list">
+                ${
+                  filteredCards.length
+                    ? filteredCards.map((c) => cardRowHtml(c)).join("")
+                    : `<div class="panel empty">No ${
+                        cardStrengthFilter === "learning" ? "in between" : cardStrengthFilter
+                      } cards in this set.</div>`
+                }
+              </div>
+            </div>`
           : `<div class="panel empty">No cards yet. Add one or import a list.</div>`
       }
     `;
@@ -202,6 +246,13 @@
         toast("Set deleted");
         navigate({ name: "home" });
       }
+    });
+
+    appEl.querySelectorAll("[data-strength-filter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        cardStrengthFilter = btn.dataset.strengthFilter;
+        render();
+      });
     });
 
     appEl.querySelectorAll("[data-edit-card]").forEach((btn) => {
@@ -224,7 +275,14 @@
     });
   }
 
+  function strengthLabel(strength) {
+    if (strength === "weak") return "Weak";
+    if (strength === "strong") return "Strong";
+    return "In between";
+  }
+
   function cardRowHtml(card) {
+    const strength = getCardStrength(card);
     return `
       <div class="card-row">
         <div>
@@ -237,6 +295,7 @@
           <p class="muted" style="margin-top:0.4rem;font-size:0.85rem;">
             ✓ ${card.correctCount || 0} · ✗ ${card.wrongCount || 0} · streak ${card.correctStreak || 0}
           </p>
+          <span class="chip strength-${strength}">${strengthLabel(strength)}</span>
         </div>
         <div class="card-actions">
           <button type="button" class="btn btn-ghost" data-edit-card="${card.id}">Edit</button>
