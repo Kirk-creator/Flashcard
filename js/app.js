@@ -22,8 +22,6 @@
   let session = null;
   let toastTimer = null;
   let cardStrengthFilter = "all";
-  let setCardOrderIds = null;
-  let setCardOrderForId = null;
 
   document.getElementById("btn-home").addEventListener("click", () => navigate({ name: "home" }));
 
@@ -36,31 +34,18 @@
     session = null;
     if (next.name !== "set") {
       cardStrengthFilter = "all";
-      setCardOrderIds = null;
-      setCardOrderForId = null;
     } else {
-      // Fresh open — reshuffle the visible card order.
-      setCardOrderIds = null;
-      setCardOrderForId = null;
+      shuffleSetOnOpen(next.setId);
     }
     render();
   }
 
-  function orderedSetCards(set) {
-    const cardIds = set.cards.map((c) => c.id);
-    const idSet = new Set(cardIds);
-
-    if (setCardOrderForId !== set.id || !setCardOrderIds) {
-      setCardOrderIds = shuffle(cardIds);
-      setCardOrderForId = set.id;
-    } else {
-      setCardOrderIds = setCardOrderIds.filter((id) => idSet.has(id));
-      for (const id of cardIds) {
-        if (!setCardOrderIds.includes(id)) setCardOrderIds.push(id);
-      }
-    }
-
-    return setCardOrderIds.map((id) => set.cards.find((c) => c.id === id)).filter(Boolean);
+  function shuffleSetOnOpen(setId) {
+    const set = getSet(state, setId);
+    if (!set || set.cards.length < 2) return;
+    set.cards = shuffle(set.cards);
+    set.updatedAt = Date.now();
+    persist();
   }
 
   function toast(message) {
@@ -195,7 +180,7 @@
     `);
 
     const due = countDueCards(set);
-    const orderedCards = orderedSetCards(set);
+    const orderedCards = set.cards;
     const strengthCounts = countByStrength(set.cards);
     const filteredCards = cardsMatchingStrength(orderedCards);
     const filterLabel = strengthFilterLabel();
@@ -669,6 +654,11 @@
         </div>
         <div class="progress-line"><span style="width:${progress}%"></span></div>
 
+        <div class="btn-row study-nav">
+          <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
+          <button type="button" class="btn btn-secondary" id="btn-shuffle" ${session.queue.length - session.index > 1 ? "" : "disabled"}>Shuffle</button>
+        </div>
+
         <div class="flashcard ${session.flipped ? "flipped" : ""}" id="flashcard" tabindex="0" role="button" aria-label="Flip card">
           <div class="flashcard-inner">
             <div class="face front">
@@ -684,15 +674,9 @@
           </div>
         </div>
 
-        <div class="study-actions">
-          <div class="btn-row study-nav">
-            <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
-            <button type="button" class="btn btn-secondary" id="btn-shuffle" ${session.queue.length - session.index > 1 ? "" : "disabled"}>Shuffle</button>
-          </div>
-          <div class="btn-row study-rate">
-            <button type="button" class="btn btn-warn" id="btn-wrong">Got it wrong</button>
-            <button type="button" class="btn btn-ok" id="btn-right">Got it right</button>
-          </div>
+        <div class="btn-row study-rate">
+          <button type="button" class="btn btn-warn" id="btn-wrong">Got it wrong</button>
+          <button type="button" class="btn btn-ok" id="btn-right">Got it right</button>
         </div>
       </div>
     `;
