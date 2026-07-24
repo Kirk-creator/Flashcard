@@ -41,5 +41,5 @@ const RecallQuiz = (() => {
     return normalizeAnswer(userInput) === normalizeAnswer(expected);
   }
 
-  return { buildMultipleChoice, answersMatch };
+  return { shuffle, buildMultipleChoice, answersMatch };
 })();

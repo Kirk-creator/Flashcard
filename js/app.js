@@ -11,7 +11,7 @@
   } = RecallStorage;
   const { applyRating, sortForReview, dueCards, nextDueAt } = RecallSpaced;
   const { parseImportText } = RecallImport;
-  const { buildMultipleChoice, answersMatch } = RecallQuiz;
+  const { shuffle, buildMultipleChoice, answersMatch } = RecallQuiz;
 
   const appEl = document.getElementById("app");
   const topActions = document.getElementById("top-actions");
@@ -567,10 +567,15 @@
           </div>
         </div>
 
-        <div class="btn-row">
-          <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
-          <button type="button" class="btn btn-warn" id="btn-wrong">Got it wrong</button>
-          <button type="button" class="btn btn-ok" id="btn-right">Got it right</button>
+        <div class="study-actions">
+          <div class="btn-row study-nav">
+            <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
+            <button type="button" class="btn btn-secondary" id="btn-shuffle" ${session.queue.length - session.index > 1 ? "" : "disabled"}>Shuffle</button>
+          </div>
+          <div class="btn-row study-rate">
+            <button type="button" class="btn btn-warn" id="btn-wrong">Got it wrong</button>
+            <button type="button" class="btn btn-ok" id="btn-right">Got it right</button>
+          </div>
         </div>
       </div>
     `;
@@ -599,6 +604,17 @@
     document.getElementById("btn-right").addEventListener("click", () => rateStudyCard(set, card, true));
     document.getElementById("btn-wrong").addEventListener("click", () => rateStudyCard(set, card, false));
     document.getElementById("btn-prev-card").addEventListener("click", () => goToPreviousStudyCard(set));
+    document.getElementById("btn-shuffle").addEventListener("click", () => shuffleStudyQueue());
+  }
+
+  function shuffleStudyQueue() {
+    if (!session || session.type !== "study") return;
+    const remaining = session.queue.slice(session.index);
+    if (remaining.length <= 1) return;
+    session.queue = [...session.queue.slice(0, session.index), ...shuffle(remaining)];
+    session.flipped = false;
+    toast("Remaining cards shuffled");
+    render();
   }
 
   function rateStudyCard(set, card, wasCorrect) {

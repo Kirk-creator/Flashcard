@@ -389,6 +389,29 @@ select:focus {
   padding: 0.5rem 0 1.5rem;
 }
 
+.study-actions {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 520px);
+}
+
+.study-actions .btn-row {
+  width: 100%;
+  margin: 0;
+}
+
+.study-nav,
+.study-rate {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.study-nav > button,
+.study-rate > button {
+  width: 100%;
+}
+
 .progress-line {
   width: min(100%, 520px);
   height: 8px;
@@ -671,9 +694,23 @@ select:focus {
     min-width: min(100%, 148px);
   }
 
-  .study-wrap .btn-row > button {
-    flex: 1 1 100%;
-    min-width: 100%;
+  .study-actions {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .study-nav > button {
+    flex: 1 1 calc(50% - 0.4rem);
+    min-width: 0;
+  }
+
+  .study-rate {
+    gap: 0.75rem;
+  }
+
+  .study-rate > button {
+    flex: none;
+    min-width: 0;
   }
 
   .quiz-option {
