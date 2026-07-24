@@ -72,9 +72,6 @@
       <section class="hero">
         <h1>Recall</h1>
         <p>Build flashcard sets, study with a flip, quiz yourself, and let spaced repetition bring hard cards back sooner.</p>
-        <div class="btn-row">
-          <button type="button" class="btn btn-primary" id="btn-new-set-hero">Create a set</button>
-        </div>
       </section>
       <div class="section-head">
         <div>
@@ -90,7 +87,6 @@
     `;
 
     document.getElementById("btn-new-set")?.addEventListener("click", openNewSetModal);
-    document.getElementById("btn-new-set-hero")?.addEventListener("click", openNewSetModal);
     appEl.querySelectorAll("[data-set-id]").forEach((el) => {
       el.addEventListener("click", () => navigate({ name: "set", setId: el.dataset.setId }));
       el.addEventListener("keydown", (e) => {
