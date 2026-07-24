@@ -48,5 +48,38 @@ const RecallSpaced = (() => {
     return Math.min(...cards.map((c) => c.nextReviewAt || 0));
   }
 
-  return { applyRating, sortForReview, dueCards, nextDueAt };
+  function getCardStrength(card) {
+    const correct = card.correctCount || 0;
+    const wrong = card.wrongCount || 0;
+    const streak = card.correctStreak || 0;
+    const interval = card.intervalDays || 0;
+    const total = correct + wrong;
+
+    // Not practiced yet — treat as in between until there is evidence either way.
+    if (total === 0) return "learning";
+
+    const accuracy = correct / total;
+
+    // Weak: recently failed, or more wrong than right, or low accuracy.
+    if (streak === 0 || wrong > correct || accuracy < 0.5) {
+      return "weak";
+    }
+
+    // Strong: solid streak or longer spacing intervals.
+    if (streak >= 3 || interval >= 7 || (accuracy >= 0.8 && streak >= 2)) {
+      return "strong";
+    }
+
+    return "learning";
+  }
+
+  function countByStrength(cards) {
+    const counts = { all: cards.length, weak: 0, learning: 0, strong: 0 };
+    for (const card of cards) {
+      counts[getCardStrength(card)] += 1;
+    }
+    return counts;
+  }
+
+  return { applyRating, sortForReview, dueCards, nextDueAt, getCardStrength, countByStrength };
 })();
