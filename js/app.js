@@ -615,14 +615,13 @@
       return;
     }
 
-    setTopActions(`
-      <button type="button" class="btn btn-ghost" id="btn-exit-study">Exit study</button>
-    `);
-    document.getElementById("btn-exit-study").addEventListener("click", () => {
-      navigate({ name: "set", setId: set.id });
-    });
-
     if (session.done || session.index >= session.queue.length) {
+      setTopActions(`
+        <button type="button" class="btn btn-ghost" id="btn-exit-study">Exit study</button>
+      `);
+      document.getElementById("btn-exit-study").addEventListener("click", () => {
+        navigate({ name: "set", setId: set.id });
+      });
       renderSessionSummary(set, "Study complete");
       return;
     }
@@ -641,6 +640,18 @@
     const backTag = session.showPromptFirst ? "Answer" : "Prompt";
     const progress = Math.round((session.index / session.queue.length) * 100);
     const canGoBack = session.history.length > 0;
+    const canShuffle = session.queue.length - session.index > 1;
+
+    setTopActions(`
+      <button type="button" class="btn btn-ghost" id="btn-exit-study">Exit</button>
+      <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
+      <button type="button" class="btn btn-secondary" id="btn-shuffle" ${canShuffle ? "" : "disabled"}>Shuffle</button>
+    `);
+    document.getElementById("btn-exit-study").addEventListener("click", () => {
+      navigate({ name: "set", setId: set.id });
+    });
+    document.getElementById("btn-prev-card").addEventListener("click", () => goToPreviousStudyCard(set));
+    document.getElementById("btn-shuffle").addEventListener("click", () => shuffleStudyQueue());
 
     appEl.innerHTML = `
       <div class="study-wrap">
@@ -653,11 +664,6 @@
           <span class="chip">✓ ${session.correct} · ✗ ${session.wrong}</span>
         </div>
         <div class="progress-line"><span style="width:${progress}%"></span></div>
-
-        <div class="btn-row study-nav">
-          <button type="button" class="btn btn-ghost" id="btn-prev-card" ${canGoBack ? "" : "disabled"}>Previous</button>
-          <button type="button" class="btn btn-secondary" id="btn-shuffle" ${session.queue.length - session.index > 1 ? "" : "disabled"}>Shuffle</button>
-        </div>
 
         <div class="flashcard ${session.flipped ? "flipped" : ""}" id="flashcard" tabindex="0" role="button" aria-label="Flip card">
           <div class="flashcard-inner">
@@ -704,8 +710,6 @@
 
     document.getElementById("btn-right").addEventListener("click", () => rateStudyCard(set, card, true));
     document.getElementById("btn-wrong").addEventListener("click", () => rateStudyCard(set, card, false));
-    document.getElementById("btn-prev-card").addEventListener("click", () => goToPreviousStudyCard(set));
-    document.getElementById("btn-shuffle").addEventListener("click", () => shuffleStudyQueue());
   }
 
   function shuffleStudyQueue() {
