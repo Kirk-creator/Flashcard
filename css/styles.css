@@ -341,7 +341,91 @@ select:focus {
 .card-list {
   display: grid;
   gap: 0.75rem;
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.cards-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
   margin-top: 1rem;
+}
+
+.strength-filter {
+  display: grid;
+  gap: 0.45rem;
+  position: sticky;
+  top: 0.75rem;
+}
+
+.filter-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-solid);
+  color: var(--ink);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.filter-btn:hover {
+  background: var(--paper-2);
+}
+
+.filter-btn.active {
+  border-color: var(--teal);
+  box-shadow: inset 0 0 0 1px var(--teal);
+  background: #e8f5f2;
+  color: var(--teal-deep);
+}
+
+.filter-count {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--paper-2);
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.filter-btn.active .filter-count {
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--teal-deep);
+}
+
+.chip.strength-weak,
+.filter-btn.strength-weak.active {
+  background: #f8e8eb;
+  color: var(--rose);
+}
+
+.chip.strength-learning,
+.filter-btn.strength-learning.active {
+  background: #f8edd9;
+  color: var(--amber);
+}
+
+.chip.strength-strong,
+.filter-btn.strength-strong.active {
+  background: #e4f4ea;
+  color: var(--ok);
 }
 
 .card-row {
@@ -353,6 +437,10 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 0.9rem;
+}
+
+.card-row .chip {
+  margin-top: 0.45rem;
 }
 
 .card-row p {
@@ -663,6 +751,21 @@ select:focus {
     flex: 1;
   }
 
+  .cards-layout {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .strength-filter {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: dense;
+  }
+
+  .strength-filter .filter-title {
+    grid-column: 1 / -1;
+  }
+
   .hero h1 {
     max-width: none;
   }
@@ -682,6 +785,12 @@ select:focus {
     font-size: 1.05rem;
   }
 
+  .filter-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+    padding: 0.7rem 0.8rem;
+  }
+
   .btn-row {
     width: 100%;
     max-width: 520px;
@@ -699,15 +808,12 @@ select:focus {
     max-width: 520px;
   }
 
-  .study-nav > button {
-    flex: 1 1 calc(50% - 0.4rem);
-    min-width: 0;
-  }
-
+  .study-nav,
   .study-rate {
     gap: 0.75rem;
   }
 
+  .study-nav > button,
   .study-rate > button {
     flex: none;
     min-width: 0;
