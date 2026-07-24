@@ -22,6 +22,8 @@
   let session = null;
   let toastTimer = null;
   let cardStrengthFilter = "all";
+  let setCardOrderIds = null;
+  let setCardOrderForId = null;
 
   document.getElementById("btn-home").addEventListener("click", () => navigate({ name: "home" }));
 
@@ -32,8 +34,33 @@
   function navigate(next) {
     route = next;
     session = null;
-    if (next.name !== "set") cardStrengthFilter = "all";
+    if (next.name !== "set") {
+      cardStrengthFilter = "all";
+      setCardOrderIds = null;
+      setCardOrderForId = null;
+    } else {
+      // Fresh open — reshuffle the visible card order.
+      setCardOrderIds = null;
+      setCardOrderForId = null;
+    }
     render();
+  }
+
+  function orderedSetCards(set) {
+    const cardIds = set.cards.map((c) => c.id);
+    const idSet = new Set(cardIds);
+
+    if (setCardOrderForId !== set.id || !setCardOrderIds) {
+      setCardOrderIds = shuffle(cardIds);
+      setCardOrderForId = set.id;
+    } else {
+      setCardOrderIds = setCardOrderIds.filter((id) => idSet.has(id));
+      for (const id of cardIds) {
+        if (!setCardOrderIds.includes(id)) setCardOrderIds.push(id);
+      }
+    }
+
+    return setCardOrderIds.map((id) => set.cards.find((c) => c.id === id)).filter(Boolean);
   }
 
   function toast(message) {
@@ -156,11 +183,12 @@
     `);
 
     const due = countDueCards(set);
+    const orderedCards = orderedSetCards(set);
     const strengthCounts = countByStrength(set.cards);
     const filteredCards =
       cardStrengthFilter === "all"
-        ? set.cards
-        : set.cards.filter((c) => getCardStrength(c) === cardStrengthFilter);
+        ? orderedCards
+        : orderedCards.filter((c) => getCardStrength(c) === cardStrengthFilter);
 
     const filterOptions = [
       { id: "all", label: "All", count: strengthCounts.all },
@@ -486,7 +514,7 @@
     if (!set || !set.cards.length) return;
 
     const forceAll = Boolean(options.forceAll);
-    const queue = sortForReview(forceAll ? [...set.cards] : dueCards(set.cards));
+    const queue = shuffle(sortForReview(forceAll ? [...set.cards] : dueCards(set.cards)));
     route = { name: "study", setId };
 
     if (!queue.length) {
@@ -765,7 +793,7 @@
     if (!set || !set.cards.length) return;
 
     const forceAll = Boolean(options.forceAll);
-    const queue = sortForReview(forceAll ? [...set.cards] : dueCards(set.cards));
+    const queue = shuffle(sortForReview(forceAll ? [...set.cards] : dueCards(set.cards)));
     route = { name: "quiz", setId };
 
     if (!queue.length) {
