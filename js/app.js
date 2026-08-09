@@ -16,6 +16,8 @@
   const appEl = document.getElementById("app");
   const topActions = document.getElementById("top-actions");
   const toastEl = document.getElementById("toast");
+  const themeBtn = document.getElementById("btn-theme");
+  const themeColorMeta = document.getElementById("meta-theme-color");
 
   let state = loadState();
   let route = { name: "home" };
@@ -23,10 +25,26 @@
   let toastTimer = null;
   let cardStrengthFilter = "all";
 
+  applyTheme();
   document.getElementById("btn-home").addEventListener("click", () => navigate({ name: "home" }));
+  themeBtn.addEventListener("click", toggleDarkMode);
 
   function persist() {
     saveState(state);
+  }
+
+  function applyTheme() {
+    const dark = Boolean(state.settings.darkMode);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    themeBtn.setAttribute("aria-pressed", String(dark));
+    themeBtn.textContent = dark ? "Light mode" : "Dark mode";
+    if (themeColorMeta) themeColorMeta.content = dark ? "#0f1a1b" : "#0f766e";
+  }
+
+  function toggleDarkMode() {
+    state.settings.darkMode = !state.settings.darkMode;
+    persist();
+    applyTheme();
   }
 
   function navigate(next) {
