@@ -10,6 +10,7 @@ const RecallStorage = (() => {
       sets: [],
       settings: {
         showPromptFirst: true,
+        darkMode: false,
       },
     };
   }
@@ -24,6 +25,7 @@ const RecallStorage = (() => {
         sets: parsed.sets,
         settings: {
           showPromptFirst: parsed.settings?.showPromptFirst !== false,
+          darkMode: Boolean(parsed.settings?.darkMode),
         },
       };
     } catch {
