@@ -507,6 +507,82 @@ select:focus {
   color: var(--ok);
 }
 
+.strength-chart {
+  margin: 0 0 1.5rem;
+}
+
+.strength-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.strength-chart h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+}
+
+.strength-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  font-weight: 700;
+}
+
+.strength-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.swatch-weak { background: var(--rose); }
+.swatch-learning { background: var(--amber); }
+.swatch-strong { background: var(--ok); }
+
+.strength-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 0.85rem;
+}
+
+.strength-chart .grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.strength-chart .axis-label {
+  fill: var(--ink-soft);
+  font-size: 12px;
+  font-family: var(--font-body);
+}
+
+.strength-chart .line-weak,
+.strength-chart .line-learning,
+.strength-chart .line-strong {
+  fill: none;
+  stroke-width: 2.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.strength-chart .line-weak { stroke: var(--rose); }
+.strength-chart .dot-weak { fill: var(--rose); }
+.strength-chart .line-learning { stroke: var(--amber); stroke-dasharray: 7 5; }
+.strength-chart .dot-learning { fill: var(--amber); }
+.strength-chart .line-strong { stroke: var(--ok); }
+.strength-chart .dot-strong { fill: var(--ok); }
+
 .card-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;

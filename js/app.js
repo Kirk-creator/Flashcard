@@ -33,6 +33,154 @@
     saveState(state);
   }
 
+  function dayKey(time = Date.now()) {
+    const date = new Date(time);
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  }
+
+  function formatDay(day) {
+    const [year, month, date] = day.split("-").map(Number);
+    return new Date(year, month - 1, date).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  function recordStrength(set) {
+    const counts = countByStrength(set.cards);
+    const day = dayKey();
+    const snapshot = {
+      day,
+      weak: counts.weak,
+      learning: counts.learning,
+      strong: counts.strong,
+    };
+    if (!Array.isArray(set.strengthHistory)) set.strengthHistory = [];
+    const last = set.strengthHistory[set.strengthHistory.length - 1];
+    if (last && last.day === day) {
+      if (
+        last.weak === snapshot.weak &&
+        last.learning === snapshot.learning &&
+        last.strong === snapshot.strong
+      ) {
+        return false;
+      }
+      Object.assign(last, snapshot);
+      return true;
+    }
+    set.strengthHistory.push(snapshot);
+    return true;
+  }
+
+  function combinedStrengthHistory(sets) {
+    const histories = sets.map((set) => (Array.isArray(set.strengthHistory) ? set.strengthHistory : []));
+    const days = [...new Set(histories.flat().map((point) => point.day))].sort();
+    return days.map((day) => {
+      const total = { weak: 0, learning: 0, strong: 0 };
+      for (const history of histories) {
+        let latest = null;
+        for (const point of history) {
+          if (point.day <= day) latest = point;
+          else break;
+        }
+        if (!latest) continue;
+        total.weak += latest.weak || 0;
+        total.learning += latest.learning || 0;
+        total.strong += latest.strong || 0;
+      }
+      return { day, ...total };
+    });
+  }
+
+  function strengthChartHtml(points) {
+    if (!points.length || points.every((point) => point.weak + point.learning + point.strong === 0)) return "";
+
+    const series = [
+      { key: "weak", label: "Weak", lineClass: "line-weak", dotClass: "dot-weak" },
+      { key: "learning", label: "In between", lineClass: "line-learning", dotClass: "dot-learning" },
+      { key: "strong", label: "Strong", lineClass: "line-strong", dotClass: "dot-strong" },
+    ];
+    const width = 640;
+    const height = 230;
+    const pad = { left: 40, right: 16, top: 16, bottom: 32 };
+    const innerW = width - pad.left - pad.right;
+    const innerH = height - pad.top - pad.bottom;
+    const peak = Math.max(1, ...points.flatMap((point) => series.map((item) => point[item.key])));
+    const xAt = (index) =>
+      points.length === 1 ? pad.left + innerW / 2 : pad.left + (index / (points.length - 1)) * innerW;
+    const yAt = (value) => pad.top + innerH - (value / peak) * innerH;
+    const pathFor = (key) =>
+      points
+        .map((point, index) => `${index === 0 ? "M" : "L"}${xAt(index).toFixed(1)} ${yAt(point[key]).toFixed(1)}`)
+        .join(" ");
+    const ticks = [...new Set([0, Math.round(peak / 2), peak])];
+    const grid = ticks
+      .map((tick) => {
+        const y = yAt(tick);
+        return `<line class="grid" x1="${pad.left}" y1="${y.toFixed(1)}" x2="${width - pad.right}" y2="${y.toFixed(1)}"></line>
+          <text class="axis-label" x="${pad.left - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end">${tick}</text>`;
+      })
+      .join("");
+    const labelAt = new Set([0, points.length - 1]);
+    if (points.length > 2) labelAt.add(Math.round((points.length - 1) / 2));
+    let lastLabelX = -Infinity;
+    const labels = points
+      .map((point, index) => {
+        if (!labelAt.has(index)) return "";
+        const x = xAt(index);
+        if (x - lastLabelX < 52 && index !== points.length - 1) return "";
+        lastLabelX = x;
+        const anchor = index === 0 ? "start" : index === points.length - 1 ? "end" : "middle";
+        return `<text class="axis-label" x="${x.toFixed(1)}" y="${height - 8}" text-anchor="${anchor}">${formatDay(point.day)}</text>`;
+      })
+      .join("");
+    const dots = points
+      .map((point, index) => {
+        const x = xAt(index).toFixed(1);
+        const title = `${formatDay(point.day)}: ${point.strong} strong, ${point.learning} in between, ${point.weak} weak`;
+        return `<g>${series
+          .map(
+            (item) =>
+              `<circle class="${item.dotClass}" cx="${x}" cy="${yAt(point[item.key]).toFixed(1)}" r="${
+                points.length === 1 ? 5 : 3.5
+              }"><title>${escapeHtml(title)}</title></circle>`
+          )
+          .join("")}</g>`;
+      })
+      .join("");
+    const latest = points[points.length - 1];
+    const summary = points
+      .map((point) => `${formatDay(point.day)}: ${point.strong} strong, ${point.learning} in between, ${point.weak} weak`)
+      .join(". ");
+
+    return `
+      <figure class="strength-chart panel">
+        <div class="strength-head">
+          <div>
+            <h2>Strength over time</h2>
+            <p class="muted">A point is saved each day. Strong, in between, and weak use the same rules as the word list.</p>
+          </div>
+          <div class="strength-legend">
+            ${series
+              .map(
+                (item) =>
+                  `<span><i class="swatch swatch-${item.key}"></i> ${item.label} ${latest[item.key]}</span>`
+              )
+              .join("")}
+          </div>
+        </div>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(summary)}">
+          ${grid}
+          ${series.map((item) => `<path class="${item.lineClass}" d="${pathFor(item.key)}"></path>`).join("")}
+          ${dots}
+          ${labels}
+        </svg>
+      </figure>
+    `;
+  }
+
   function applyTheme() {
     const dark = Boolean(state.settings.darkMode);
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
@@ -105,6 +253,7 @@
         <h1>Recall</h1>
         <p>Build flashcard sets, study with a flip, quiz yourself, and let spaced repetition bring hard cards back sooner.</p>
       </section>
+      ${strengthChartHtml(combinedStrengthHistory(sets))}
       <div class="section-head">
         <div>
           <h2>Your sets</h2>
@@ -250,6 +399,8 @@
         <span class="chip strength-strong">${strengthCounts.strong} strong</span>
       </div>
 
+      ${set.cards.length ? strengthChartHtml(set.strengthHistory || []) : ""}
+
       <div class="section-head">
         <div>
           <h2>Word list</h2>
@@ -313,6 +464,7 @@
         if (!confirm("Delete this card?")) return;
         set.cards = set.cards.filter((c) => c.id !== card.id);
         set.updatedAt = Date.now();
+        recordStrength(set);
         persist();
         toast("Card deleted");
         render();
@@ -410,6 +562,7 @@
         set.cards.push(createCard(prompt, answer));
       }
       set.updatedAt = Date.now();
+      recordStrength(set);
       persist();
       closeModal();
       toast(editing ? "Card updated" : "Card added");
@@ -456,6 +609,7 @@
         set.cards.push(createCard(pair.prompt, pair.answer));
       }
       set.updatedAt = Date.now();
+      recordStrength(set);
       persist();
       closeModal();
       toast(`Imported ${cards.length} card${cards.length === 1 ? "" : "s"}`);
@@ -753,6 +907,7 @@
     const idx = set.cards.findIndex((c) => c.id === card.id);
     set.cards[idx] = updated;
     set.updatedAt = Date.now();
+    recordStrength(set);
     persist();
 
     if (wasCorrect) session.correct += 1;
@@ -772,6 +927,7 @@
     if (idx !== -1) {
       set.cards[idx] = { ...last.cardBefore };
       set.updatedAt = Date.now();
+      recordStrength(set);
       persist();
     }
 
@@ -1028,6 +1184,7 @@
     const idx = set.cards.findIndex((c) => c.id === card.id);
     set.cards[idx] = updated;
     set.updatedAt = Date.now();
+    recordStrength(set);
     persist();
 
     if (ok) session.correct += 1;
@@ -1101,5 +1258,6 @@
     document.getElementById("modal-backdrop")?.remove();
   }
 
+  if (state.sets.some((set) => recordStrength(set))) persist();
   render();
 })();

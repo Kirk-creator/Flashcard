@@ -1,4 +1,16 @@
 const RecallSpaced = (() => {
+  /**
+   * A correct answer moves up one stage. A wrong answer moves back one stage.
+   * Stages: 0 = 1 day, 1 = 1 day, 2 = 3 days, then previous interval × ease.
+   * A reviewed card is never due again sooner than one day.
+   */
+  function intervalForStreak(streak, previousIntervalDays, ease) {
+    if (streak <= 1) return 1;
+    if (streak === 2) return 3;
+    const prev = Math.max(previousIntervalDays || 1, 1);
+    return Math.round(prev * ease);
+  }
+
   function applyRating(card, wasCorrect) {
     const now = Date.now();
     const next = { ...card, lastReviewedAt: now };
@@ -7,24 +19,32 @@ const RecallSpaced = (() => {
       next.correctCount = (card.correctCount || 0) + 1;
       next.correctStreak = (card.correctStreak || 0) + 1;
       next.ease = Math.min(3.0, (card.ease || 2.5) + 0.05);
-
-      if (next.correctStreak === 1) {
-        next.intervalDays = 1;
-      } else if (next.correctStreak === 2) {
-        next.intervalDays = 3;
-      } else {
-        const prev = Math.max(card.intervalDays || 1, 1);
-        next.intervalDays = Math.round(prev * next.ease);
-      }
+      const history = Array.isArray(card.intervalHistory) ? card.intervalHistory.slice() : [];
+      history.push(card.intervalDays || 0);
+      next.intervalHistory = history;
+      next.intervalDays = intervalForStreak(next.correctStreak, card.intervalDays, next.ease);
     } else {
+      const easeUsed = card.ease || 2.5;
       next.wrongCount = (card.wrongCount || 0) + 1;
-      next.correctStreak = 0;
-      next.ease = Math.max(1.3, (card.ease || 2.5) - 0.2);
-      next.intervalDays = 0;
+      next.correctStreak = Math.max(0, (card.correctStreak || 0) - 1);
+      next.ease = Math.max(1.3, easeUsed - 0.2);
+      const history = Array.isArray(card.intervalHistory) ? card.intervalHistory.slice() : [];
+      if ((card.correctStreak || 0) > 0 && history.length) {
+        next.intervalDays = history.pop();
+        next.intervalHistory = history;
+      } else if (next.correctStreak <= 2) {
+        next.intervalDays = intervalForStreak(next.correctStreak);
+        next.intervalHistory = history;
+      } else {
+        const current = Math.max(card.intervalDays || 1, 1);
+        next.intervalDays = Math.max(1, Math.round(current / easeUsed));
+        next.intervalHistory = history;
+      }
     }
 
-    const ms = Math.max(next.intervalDays, 0) * 24 * 60 * 60 * 1000;
-    next.nextReviewAt = wasCorrect && next.intervalDays > 0 ? now + ms : now + 2 * 60 * 1000;
+    const dayMs = 24 * 60 * 60 * 1000;
+    next.intervalDays = Math.max(1, next.intervalDays || 0);
+    next.nextReviewAt = now + next.intervalDays * dayMs;
     return next;
   }
 
