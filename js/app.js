@@ -74,26 +74,6 @@
     return true;
   }
 
-  function combinedStrengthHistory(sets) {
-    const histories = sets.map((set) => (Array.isArray(set.strengthHistory) ? set.strengthHistory : []));
-    const days = [...new Set(histories.flat().map((point) => point.day))].sort();
-    return days.map((day) => {
-      const total = { weak: 0, learning: 0, strong: 0 };
-      for (const history of histories) {
-        let latest = null;
-        for (const point of history) {
-          if (point.day <= day) latest = point;
-          else break;
-        }
-        if (!latest) continue;
-        total.weak += latest.weak || 0;
-        total.learning += latest.learning || 0;
-        total.strong += latest.strong || 0;
-      }
-      return { day, ...total };
-    });
-  }
-
   function strengthChartHtml(points) {
     if (!points.length || points.every((point) => point.weak + point.learning + point.strong === 0)) return "";
 
@@ -253,7 +233,6 @@
         <h1>Recall</h1>
         <p>Build flashcard sets, study with a flip, quiz yourself, and let spaced repetition bring hard cards back sooner.</p>
       </section>
-      ${strengthChartHtml(combinedStrengthHistory(sets))}
       <div class="section-head">
         <div>
           <h2>Your sets</h2>
