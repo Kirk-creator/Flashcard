@@ -310,6 +310,7 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1rem;
+  margin-bottom: 1.75rem;
 }
 
 .set-card {
@@ -601,6 +602,7 @@ select:focus {
 .card-row p {
   margin: 0;
   word-break: break-word;
+  white-space: pre-line;
 }
 
 .card-row .label {
@@ -718,6 +720,7 @@ select:focus {
   line-height: 1.25;
   margin: 0;
   max-width: 28ch;
+  white-space: pre-line;
 }
 
 .hint {
@@ -765,6 +768,7 @@ select:focus {
   padding: 0.95rem 1rem;
   min-height: 48px;
   font-weight: 600;
+  white-space: pre-line;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -798,6 +802,7 @@ select:focus {
   padding: 0.9rem 1rem;
   font-weight: 700;
   text-align: center;
+  white-space: pre-line;
 }
 
 .result-banner.ok {

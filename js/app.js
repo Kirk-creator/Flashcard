@@ -226,22 +226,42 @@
   function renderHome() {
     setTopActions(`<button type="button" class="btn btn-primary" id="btn-new-set">New set</button>`);
 
-    const sets = [...state.sets].sort((a, b) => b.updatedAt - a.updatedAt);
+    const customSets = state.sets
+      .filter((set) => !set.builtinWeek)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+    const weekSets = state.sets
+      .filter((set) => set.builtinWeek)
+      .sort((a, b) => a.builtinWeek - b.builtinWeek);
 
     appEl.innerHTML = `
       <section class="hero">
         <h1>Recall</h1>
         <p>Build flashcard sets, study with a flip, quiz yourself, and let spaced repetition bring hard cards back sooner.</p>
       </section>
+      ${
+        customSets.length
+          ? `<div class="section-head">
+              <div>
+                <h2>Your sets</h2>
+                <p class="muted">Saved on this device in your browser.</p>
+              </div>
+            </div>
+            <div class="set-grid">${customSets.map(setCardHtml).join("")}</div>`
+          : ""
+      }
       <div class="section-head">
         <div>
-          <h2>Your sets</h2>
-          <p class="muted">${sets.length ? "Saved on this device in your browser." : "No sets yet — create one to begin."}</p>
+          <h2>Week sets</h2>
+          <p class="muted">${
+            weekSets.length
+              ? "Included with Recall. Japanese and romaji on the front, English on the back."
+              : "No week sets are included in this copy."
+          }</p>
         </div>
       </div>
       ${
-        sets.length
-          ? `<div class="set-grid">${sets.map(setCardHtml).join("")}</div>`
+        weekSets.length
+          ? `<div class="set-grid">${weekSets.map(setCardHtml).join("")}</div>`
           : `<div class="panel empty">Create your first flashcard set to start studying.</div>`
       }
     `;

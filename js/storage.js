@@ -12,10 +12,11 @@ const RecallStorage = (() => {
         showPromptFirst: true,
         darkMode: false,
       },
+      builtinCatalogVersion: 0,
     };
   }
 
-  function loadState() {
+  function readStoredState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return defaultState();
@@ -27,10 +28,57 @@ const RecallStorage = (() => {
           showPromptFirst: parsed.settings?.showPromptFirst !== false,
           darkMode: Boolean(parsed.settings?.darkMode),
         },
+        builtinCatalogVersion: Number(parsed.builtinCatalogVersion) || 0,
       };
     } catch {
       return defaultState();
     }
+  }
+
+  function freshBuiltinCard(card, now) {
+    return {
+      id: card.id,
+      prompt: String(card.prompt || "").trim(),
+      answer: String(card.answer || "").trim(),
+      correctStreak: 0,
+      wrongCount: 0,
+      correctCount: 0,
+      intervalDays: 0,
+      ease: 2.5,
+      nextReviewAt: now,
+      lastReviewedAt: null,
+    };
+  }
+
+  function applyBuiltinCatalog(state) {
+    const catalog = typeof RecallBuiltin === "undefined" ? null : RecallBuiltin;
+    if (!catalog || !Array.isArray(catalog.sets)) return state;
+    const version = Number(catalog.version) || 1;
+    if ((state.builtinCatalogVersion || 0) >= version) return state;
+
+    const existing = new Set(state.sets.map((set) => set.id));
+    const now = Date.now();
+    for (const source of catalog.sets) {
+      if (!source || existing.has(source.id)) continue;
+      const cards = (source.cards || [])
+        .map((card) => freshBuiltinCard(card, now))
+        .filter((card) => card.prompt && card.answer);
+      state.sets.push({
+        id: source.id,
+        title: source.title,
+        description: source.description || "",
+        builtinWeek: source.week,
+        createdAt: now,
+        updatedAt: now,
+        cards,
+      });
+    }
+    state.builtinCatalogVersion = version;
+    return state;
+  }
+
+  function loadState() {
+    return applyBuiltinCatalog(readStoredState());
   }
 
   function saveState(state) {
