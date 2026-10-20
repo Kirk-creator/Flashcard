@@ -8,16 +8,15 @@
   <meta name="apple-mobile-web-app-title" content="Recall" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Recall — Spaced Repetition Flashcards</title>
-  <link rel="icon" href="favicon.svg?v=20261019-ri-mark" type="image/svg+xml" />
-  <link rel="icon" href="favicon.ico?v=20261019-ri-mark" sizes="any" />
-  <link rel="icon" href="icons/favicon-32.png?v=20261019-ri-mark" type="image/png" sizes="32x32" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261019-ri-mark" />
+  <link rel="icon" href="favicon.svg?v=20261019-ri-fancy" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico?v=20261019-ri-fancy" sizes="any" />
+  <link rel="icon" href="icons/favicon-32.png?v=20261019-ri-fancy" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=20261019-ri-fancy" />
   <link rel="manifest" href="site.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=%E3%83%AA&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=20261019-ri-mark" />
+  <link rel="stylesheet" href="css/styles.css?v=20261019-ri-fancy" />
   <script>
     try {
       const raw = localStorage.getItem("recall-flashcards-v1");
@@ -31,7 +30,13 @@
 
   <header class="topbar">
     <button type="button" class="brand" id="btn-home" aria-label="Go to home">
-      <span class="brand-mark">リ</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" focusable="false">
+          <g fill="currentColor" transform="translate(32 32) scale(0.062344 -0.062344) translate(-477.900 -325.000)">
+            <path d="M721 610Q721 601 718 592.5Q715 584 710 576Q707 570 704.5 564Q702 558 700 551Q698 515 697.5 480Q697 445 697 410Q696 327 691.5 247.5Q687 168 663 93Q651 56 623 23Q595 -10 576 -45Q559 -51 545 -60Q531 -69 514 -76Q529 -18 547 41.5Q565 101 580.5 165.5Q596 230 601 301Q602 315 601 329.5Q600 344 599 358Q598 369 597.5 380Q597 391 597 402Q597 421 597.5 440Q598 459 599 477Q600 523 600 566.5Q600 610 591 652Q589 659 587 666Q585 673 582 680Q577 693 574.5 705Q572 717 576 726Q591 725 615 712.5Q639 700 663 682Q687 664 703.5 644.5Q720 625 721 610ZM384 568Q381 534 380.5 495Q380 456 380 414Q380 359 379 302Q378 245 371 190Q343 198 325.5 218Q308 238 295 265.5Q282 293 269 320Q272 326 278 329.5Q284 333 288 337Q287 356 287.5 376Q288 396 288 415Q289 455 288 493Q287 531 279 564Q267 580 255.5 597Q244 614 235 633Q235 635 235 638Q234 644 238 645Q275 645 298.5 632.5Q322 620 341.5 602.5Q361 585 384 568Z"/>
+          </g>
+        </svg>
+      </span>
       <span class="brand-name">Recall</span>
     </button>
     <div class="topbar-end">
@@ -46,11 +51,11 @@
 
   <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
-  <script src="js/builtin-sets.js?v=20261019-ri-mark"></script>
-  <script src="js/storage.js?v=20261019-ri-mark"></script>
-  <script src="js/spaced.js?v=20261019-ri-mark"></script>
-  <script src="js/import.js?v=20261019-ri-mark"></script>
-  <script src="js/quiz.js?v=20261019-ri-mark"></script>
-  <script src="js/app.js?v=20261019-ri-mark"></script>
+  <script src="js/builtin-sets.js?v=20261019-ri-fancy"></script>
+  <script src="js/storage.js?v=20261019-ri-fancy"></script>
+  <script src="js/spaced.js?v=20261019-ri-fancy"></script>
+  <script src="js/import.js?v=20261019-ri-fancy"></script>
+  <script src="js/quiz.js?v=20261019-ri-fancy"></script>
+  <script src="js/app.js?v=20261019-ri-fancy"></script>
 </body>
 </html>
